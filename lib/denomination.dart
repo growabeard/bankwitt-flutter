@@ -11,26 +11,29 @@ class Denomination {
   final String name;
 
   const Denomination(this.id, this.count, this.value, this.userId, this.label,
-      this.updated, this.total, {this.name});
+      this.updated, this.total, this.name);
+
+
 }
 
 typedef void CartChangedCallback(Denomination denomination, bool inCart);
 
-class ShoppingListItem extends StatelessWidget {
-  ShoppingListItem({Denomination denomination, this.inCart, this.onCartChanged})
+class DenominationListItem extends StatelessWidget {
+  DenominationListItem({Denomination denomination, this.inCart})
       : denomination= denomination,
         super(key: new ObjectKey(denomination));
 
   final Denomination denomination;
   final bool inCart;
-  final CartChangedCallback onCartChanged;
 
   Color _getColor(BuildContext context) {
     // The theme depends on the BuildContext because different parts of the tree
     // can have different themes.  The BuildContext indicates where the build is
     // taking place and therefore which theme to use.
 
-    return inCart ? Colors.black54 : Theme.of(context).primaryColor;
+    return inCart ? Colors.black54 : Theme
+        .of(context)
+        .primaryColor;
   }
 
   TextStyle _getTextStyle(BuildContext context) {
@@ -42,25 +45,86 @@ class ShoppingListItem extends StatelessWidget {
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
-    return new Row(
-        children: <Widget>[
-         new Expanded(
-           child:
-             new Text(denomination.label),
-         )
-        ]
+    var item;
+    final Widget image = new GestureDetector(
+        child: new Hero(
+            key: new Key(denomination.name),
+            tag: denomination.label,
+            child: new Image.asset(
+              'images/' + denomination.name + '.png',
+              fit: BoxFit.cover,
+            )
+        )
     );
-//    return new ListTile(
-//      onTap: () {
-//        onCartChanged(denomination, !inCart);
-//      },
-//      leading: new CircleAvatar(
-//        backgroundColor: _getColor(context),
-//        child: new Text(denomination.name[0]),
-//      ),
-//      title: new Text(denomination.name, style: _getTextStyle(context)),
-//    );
+    var emptyItem = new GridTile(
+      child: image, footer: new GestureDetector(child:
+      new GridTileBar(
+        backgroundColor: Colors.black87,
+        title: new _GridTitleText('Retrieving items..'),
+        subtitle: new _GridTitleText('Check back in a bit..'),
+      )),);
+
+    var filledItem = new GridTile(
+      footer: new GestureDetector(
+        onTap: () {
+          onBannerTap(denomination);
+        },
+        child: new GridTileBar(
+          backgroundColor: Colors.black87,
+          title: new _GridTitleText(denomination.total),
+          subtitle: new _GridTitleText(denomination.count.toString()),
+          trailing: new Row(
+              children: [
+                new IconButton(
+                  icon: new Icon(
+                    Icons.remove,
+                    size: 25.0,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    /* ... */
+                  },
+                ),
+                new IconButton(
+                  icon: new Icon(
+                    Icons.add,
+                    size: 25.0,
+                    color: Colors.white,
+                  ),
+                  onPressed: () {
+                    /* ... */
+                  },
+                ),
+              ]
+          ),
+        ),
+      ),
+      child: image,
+    );
+
+    denomination.name == 'empty' ? item = emptyItem : item = filledItem;
+
+    return item;
+  }
+
+  void onBannerTap(photo) {}
+}
+
+
+class _GridTitleText extends StatelessWidget {
+  const _GridTitleText(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return new FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: new Text(text),
+    );
   }
 }
