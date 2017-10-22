@@ -1,50 +1,27 @@
 import 'package:flutter/material.dart';
 
 class Denomination {
-  final int id;
-  final int count;
-  final double value;
-  final int userId;
-  final String label;
-  final String updated;
-  final String total;
-  final String name;
+  int id;
+  int count;
+  double value;
+  int userId;
+  String label;
+  String updated;
+  String total;
+  String name;
 
-  const Denomination(this.id, this.count, this.value, this.userId, this.label,
+  Denomination(this.id, this.count, this.value, this.userId, this.label,
       this.updated, this.total, this.name);
-
-
 }
 
 typedef void CartChangedCallback(Denomination denomination, bool inCart);
 
 class DenominationListItem extends StatelessWidget {
-  DenominationListItem({Denomination denomination, this.inCart})
-      : denomination= denomination,
+  DenominationListItem({Denomination denomination})
+      : denomination = denomination,
         super(key: new ObjectKey(denomination));
 
-  final Denomination denomination;
-  final bool inCart;
-
-  Color _getColor(BuildContext context) {
-    // The theme depends on the BuildContext because different parts of the tree
-    // can have different themes.  The BuildContext indicates where the build is
-    // taking place and therefore which theme to use.
-
-    return inCart ? Colors.black54 : Theme
-        .of(context)
-        .primaryColor;
-  }
-
-  TextStyle _getTextStyle(BuildContext context) {
-    if (!inCart) return null;
-
-    return new TextStyle(
-      color: Colors.black54,
-      decoration: TextDecoration.lineThrough,
-    );
-  }
-
+  Denomination denomination;
 
   @override
   Widget build(BuildContext context) {
@@ -67,7 +44,7 @@ class DenominationListItem extends StatelessWidget {
         subtitle: new _GridTitleText('Check back in a bit..'),
       )),);
 
-    var filledItem = new GridTile(
+    denomination.name == 'empty' ? item = emptyItem : item = new GridTile(
       footer: new GestureDetector(
         onTap: () {
           onBannerTap(denomination);
@@ -85,7 +62,7 @@ class DenominationListItem extends StatelessWidget {
                     color: Colors.white,
                   ),
                   onPressed: () {
-                    /* ... */
+                    denomination.count--;
                   },
                 ),
                 new IconButton(
@@ -95,7 +72,7 @@ class DenominationListItem extends StatelessWidget {
                     color: Colors.white,
                   ),
                   onPressed: () {
-                    /* ... */
+                    denomination.count++;
                   },
                 ),
               ]
@@ -104,8 +81,6 @@ class DenominationListItem extends StatelessWidget {
       ),
       child: image,
     );
-
-    denomination.name == 'empty' ? item = emptyItem : item = filledItem;
 
     return item;
   }
