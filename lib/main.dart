@@ -13,7 +13,7 @@ var httpClient = createHttpClient();
 var bankWittUrl = 'bankwitt.herokuapp.com';
 
 
-var User = {'name': 'Joseph Moody', 'id': '1'};
+var User = {'first': 'Joseph', 'last': 'Moody', 'id': '1'};
 
 class DenominationList extends StatefulWidget {
   DenominationList({Key key, this.denominations}) : super(key: key);
@@ -31,38 +31,6 @@ class DenominationList extends StatefulWidget {
 
 class _DenominationListState extends State<DenominationList> {
   var url = new Uri.https(bankWittUrl, 'denominations', {'userId': '1'});
-
-  // Function to get the JSON data
-
-//  Future<String> getJSONData() async {
-//    var response = await http.get(
-//
-//        // Encode the url
-//
-//        url,
-//
-//        // Only accept JSON response
-//
-//        headers: {"Accept": "application/json"});
-//
-//    // Logs the response body to the console
-//
-//    print(response.body);
-//
-//    // To modify the state of the app, use this method
-//
-//    setState(() {
-//      // Get the JSON data
-//
-//      var dataConvertedToJSON = JSON.decode(response.body);
-//
-//      // Extract the required part and assign it to the global variable named data
-//
-//      data = dataConvertedToJSON['denominations'];
-//    });
-//
-//    return "Successfull";
-//  }
 
   initState() {
     super.initState();
@@ -83,7 +51,16 @@ class _DenominationListState extends State<DenominationList> {
     });
   }
 
-  _saveDenominationList() async {}
+  _saveDenominationList() async {
+    print('Saving denomination list');
+    var url = new Uri.https(bankWittUrl, 'savedenominations');
+    var body = "{\"denominations\": " + JSON.encode(widget.denominations) + ", \"user\": " + JSON.encode(User) + "}";
+    print("BODY " + body);
+    Map header = new Map();
+    header['Content-Type'] = 'application/json';
+    var response = await httpClient.post(url, body: body, headers: header);
+    print(response.statusCode);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +106,9 @@ class _DenominationListState extends State<DenominationList> {
     List<Denomination> denoms = new List<Denomination>();
 
     for(var denom in denomInner) {
-      denoms.add(new Denomination(denom['id'], denom['count'], denom['value'], denom['userId'], denom['label'], denom['updated'], denom['total'], denom['name']));
+      denoms.add(new Denomination(denom['id'], denom['count'], denom['value'],
+          denom['userid'], denom['label'], denom['updated'], denom['total'],
+          denom['name']));
     }
 
     return denoms;
@@ -137,7 +116,8 @@ class _DenominationListState extends State<DenominationList> {
 }
 
 void main() {
-  runApp(new MaterialApp(title: 'BankWitt', home: new DenominationList()));
+  runApp(new MaterialApp(title: 'BankWitt', home: new DenominationList(),
+  theme: new ThemeData.light()));
 }
 
 getUsers() async {

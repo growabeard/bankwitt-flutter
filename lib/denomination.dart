@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class Denomination {
   int id;
@@ -11,12 +12,32 @@ class Denomination {
   String name;
 
   Denomination(this.id, this.count, this.value, this.userId, this.label,
-      this.updated, this.total, this.name);
+      this.updated, this.total, this.name){
+    total = getNumberFormat(count, value);
+  }
+
+  Map toJson() {
+    Map map = new Map();
+    map['id'] = this.id;
+    map['count'] = this.count;
+    map['value'] = this.value;
+    map['userid'] = this.userId;
+    map['label'] = this.label;
+    map['updated'] = this.updated;
+    map['total'] = this.total;
+    map['name'] = this.name;
+    return map;
+  }
+
 }
 
-typedef void CartChangedCallback(Denomination denomination, bool inCart);
+String getNumberFormat(int count, double value) {
+  var format = new NumberFormat("#,##0.00", "en_US");
 
-class DenominationListItem extends StatelessWidget {
+  return '\$ ' + format.format((count * value) / 100);
+}
+
+class DenominationListItem extends StatefulWidget {
   DenominationListItem({Denomination denomination})
       : denomination = denomination,
         super(key: new ObjectKey(denomination));
@@ -24,35 +45,34 @@ class DenominationListItem extends StatelessWidget {
   Denomination denomination;
 
   @override
+  State<StatefulWidget> createState() => new _DenominationTileState();
+}
+
+class _DenominationTileState extends State<DenominationListItem> {
+
+
+  @override
   Widget build(BuildContext context) {
-    var item;
     final Widget image = new GestureDetector(
         child: new Hero(
-            key: new Key(denomination.name),
-            tag: denomination.label,
+            key: new Key(widget.denomination.name),
+            tag: widget.denomination.label,
             child: new Image.asset(
-              'images/' + denomination.name + '.png',
+              'images/' + widget.denomination.name + '.png',
               fit: BoxFit.cover,
             )
         )
     );
-    var emptyItem = new GridTile(
-      child: image, footer: new GestureDetector(child:
-      new GridTileBar(
-        backgroundColor: Colors.black87,
-        title: new _GridTitleText('Retrieving items..'),
-        subtitle: new _GridTitleText('Check back in a bit..'),
-      )),);
 
-    denomination.name == 'empty' ? item = emptyItem : item = new GridTile(
+    return new GridTile(
       footer: new GestureDetector(
         onTap: () {
-          onBannerTap(denomination);
+          onBannerTap(widget.denomination);
         },
         child: new GridTileBar(
           backgroundColor: Colors.black87,
-          title: new _GridTitleText(denomination.total),
-          subtitle: new _GridTitleText(denomination.count.toString()),
+          title: new _GridTitleText(widget.denomination.total),
+          subtitle: new _GridTitleText(widget.denomination.count.toString()),
           trailing: new Row(
               children: [
                 new IconButton(
@@ -62,8 +82,14 @@ class DenominationListItem extends StatelessWidget {
                     color: Colors.white,
                   ),
                   onPressed: () {
-                    denomination.count--;
+                    setState((){
+                      if (widget.denomination.count <= 0) { return; }
+                      widget.denomination.count--;
+                      updateTotal();
+                    });
                   },
+                  tooltip: 'Subtract from Count',
+                  splashColor: Colors.white,
                 ),
                 new IconButton(
                   icon: new Icon(
@@ -72,8 +98,13 @@ class DenominationListItem extends StatelessWidget {
                     color: Colors.white,
                   ),
                   onPressed: () {
-                    denomination.count++;
+                    setState((){
+                      widget.denomination.count++;
+                      updateTotal();
+                    });
                   },
+                  tooltip: 'Add to Count',
+                  splashColor: Colors.white,
                 ),
               ]
           ),
@@ -81,8 +112,10 @@ class DenominationListItem extends StatelessWidget {
       ),
       child: image,
     );
+  }
 
-    return item;
+  String updateTotal() {
+    return widget.denomination.total = getNumberFormat(widget.denomination.count, widget.denomination.value);
   }
 
   void onBannerTap(photo) {}
