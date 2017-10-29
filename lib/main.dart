@@ -5,9 +5,10 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
-import 'denomination.dart';
-import 'package:numberpicker/numberpicker.dart';
+import 'package:bankwitt/denomination.dart';
+import 'package:bankwitt/denominationEntryDialog.dart';
 
 var httpClient = createHttpClient();
 var bankWittUrl = 'bankwitt.herokuapp.com';
@@ -30,7 +31,10 @@ class DenominationList extends StatefulWidget {
 }
 
 class _DenominationListState extends State<DenominationList> {
+  ScrollController _scrollController = new ScrollController();
   var url = new Uri.https(bankWittUrl, 'denominations', {'userId': '1'});
+
+  int userId = 0;
 
   initState() {
     super.initState();
@@ -69,23 +73,30 @@ class _DenominationListState extends State<DenominationList> {
     return new Scaffold(
         appBar: new AppBar(title: new Text('Joseph Moody'), actions: <Widget>[
           new IconButton(
-            icon: new Icon(Icons.save),
-            tooltip: 'Save Denominations for User',
+            icon: new Icon(Icons.add),
+            tooltip: 'Add new denomination',
             onPressed: () {
-              _saveDenominationList();
+              _openAddEntryDialog();
             },
           ),
           new IconButton(
             icon: new Icon(Icons.refresh),
-            tooltip: 'Refresh Denominations for User',
+            tooltip: 'Refresh denominations for User',
             onPressed: () {
               _getDenominationList(1);
+            },
+          ), new IconButton(
+            icon: new Icon(Icons.save),
+            tooltip: 'Save denominations for User',
+            onPressed: () {
+              _saveDenominationList();
             },
           )
         ]),
         body: new Column(children: <Widget>[
           new Expanded(
               child: new GridView.builder(
+                controller: _scrollController,
             gridDelegate: new SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: (orientation == Orientation.portrait) ? 2 : 3,
               mainAxisSpacing: 4.0,
@@ -112,6 +123,86 @@ class _DenominationListState extends State<DenominationList> {
     }
 
     return denoms;
+  }
+
+  void _addWeightSave(Denomination denominationToSave) {
+
+    setState(() {
+
+      widget.denominations.add(denominationToSave);
+
+      _scrollController.animateTo(
+
+        widget.denominations.length * 50.0,
+
+        duration: const Duration(microseconds: 1),
+
+        curve: new ElasticInCurve(0.01),
+
+      );
+
+    });
+
+  }
+
+
+
+  _editEntry(Denomination denominationEdit) {
+
+    Navigator
+
+        .of(context)
+
+        .push(
+
+      new MaterialPageRoute<Denomination>(
+
+        builder: (BuildContext context) {
+
+          return new DenominationEntryDialog.edit(denominationEdit);
+
+        },
+
+        fullscreenDialog: false,
+
+      ),
+
+    )
+
+        .then((newSave) {
+
+      if (newSave != null) {
+
+        setState(() => widget.denominations[widget.denominations.indexOf(denominationEdit)] = newSave);
+
+      }
+
+    });
+
+  }
+
+
+
+  Future _openAddEntryDialog() async {
+
+    Denomination save =
+
+    await Navigator.of(context).push(new MaterialPageRoute<Denomination>(
+
+        builder: (BuildContext context) {
+
+          return new DenominationEntryDialog.add(new Denomination(0, 0, 0.0, userId, '', new DateFormat("EEE dd/MM/yyyy").format(new DateTime.now()), '\$ 0.00', ''));
+
+        },
+
+        fullscreenDialog: false));
+
+    if (save != null) {
+
+      _addWeightSave(save);
+
+    }
+
   }
 }
 
