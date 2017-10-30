@@ -6,7 +6,7 @@ import 'package:bankwitt/denominationEntryDialog.dart';
 class Denomination {
   int id;
   int count;
-  double value;
+  int value;
   int userId;
   String label;
   String updated;
@@ -33,7 +33,7 @@ class Denomination {
 
 }
 
-String getNumberFormat(int count, double value) {
+String getNumberFormat(int count, int value) {
   var format = new NumberFormat("#,##0.00", "en_US");
 
   return '\$ ' + format.format((count * value) / 100);
@@ -57,8 +57,8 @@ class _DenominationTileState extends State<DenominationListItem> {
   Widget build(BuildContext context) {
     final Widget image = new GestureDetector(
         child: new Hero(
-            key: new Key(widget.denomination.name),
-            tag: widget.denomination.label,
+            key: new Key(widget.denomination.name + widget.denomination.userId.toString()),
+            tag: widget.denomination.name,
             child: new Image.asset(
               'images/' + widget.denomination.name + '.png',
               fit: BoxFit.cover,

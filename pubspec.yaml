@@ -26,6 +26,16 @@ flutter:
     - images/nickel.png
     - images/dime.png
     - images/quarter.png
+    - images/dollar_coin.png
+    - images/dollar.png
+    - images/half_dollar.png
+    - images/two_dollar.png
+    - images/five_dollar.png
+    - images/ten_dollar.png
+    - images/twenty_dollar.png
+    - images/fifty_dollar.png
+    - images/hundred_dollar.png
+
 
   # To add assets from package dependencies, first ensure the asset
   # is in the lib/ directory of the dependency. Then,

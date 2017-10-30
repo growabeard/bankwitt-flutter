@@ -34,7 +34,7 @@ class DenominationEntryDialog extends StatefulWidget {
           denominationToEdit.name);
     } else {
       return new DenominationEntryDialogState(
-          0, 0, 0.0, 0, '', _dateFormat.format(_dateEdited), '', '');
+          0, 0, 0, 0, '', _dateFormat.format(_dateEdited), '', '');
     }
   }
 }
@@ -42,14 +42,28 @@ class DenominationEntryDialog extends StatefulWidget {
 class DenominationEntryDialogState extends State<DenominationEntryDialog> {
   int _id;
   int _count;
-  double _value;
+  int _value;
   int _userId;
   String _label;
   String _updated;
   String _total;
   String _name;
 
-  TextEditingController _textController;
+  var _possibleNames = <String>[
+    'penny',
+    'nickel',
+    'dime',
+    'quarter',
+    'half_dollar',
+    'dollar_coin',
+    'dollar',
+    'two_dollar',
+    'five_dollar',
+    'ten_dollar',
+    'twenty_dollar',
+    'fifty_dollar',
+    'hundred_dollar'
+  ];
 
   DenominationEntryDialogState(this._id, this._count, this._value, this._userId,
       this._label, this._updated, this._total, this._name);
@@ -72,15 +86,15 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
                   .subhead
                   .copyWith(color: Colors.white)),
         ),
+        new IconButton(
+          icon: new Icon(Icons.delete),
+          tooltip: 'Delete denomination',
+          onPressed: () {
+
+          },
+        )
       ],
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-
-    _textController = new TextEditingController(text: '');
   }
 
   @override
@@ -108,16 +122,38 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
             title: new Text(
               "Value: \$ $_value",
             ),
-            onTap: () => _showCountPicker(context),
+            onTap: () => _showValuePicker(context),
           ),
           new ListTile(
-            leading: new Icon(Icons.attach_money, color: Colors.grey[500]),
-            title: new TextField(
-              decoration: new InputDecoration(
-                hintText: 'Name of denomination',
-              ),
-              controller: _textController,
-              onChanged: (value) => _name = value,
+            title: const Text('Name:'),
+            trailing: new DropdownButton<String>(
+              value: _name,
+              onChanged: (String newValue) {
+                setState(() {
+                  _name = newValue;
+                });
+              },
+              items: _possibleNames.map((String value) {
+                return new DropdownMenuItem<String>(
+                  value: value,
+                  child: new Text(value),
+                );
+              }).toList(),
+            ),
+          ),
+          new ListTile(
+            title: new Text(
+              "Total: $_total",
+            ),
+          ),
+          new ListTile(
+            title: new Text(
+              "User: $_userId",
+            ),
+          ),
+          new ListTile(
+            title: new Text(
+              _id == null ? "NEW" : "ID: $_id",
             ),
           ),
         ],
@@ -129,14 +165,17 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
     showDialog(
       context: context,
       child: new NumberPickerDialog.integer(
-        minValue: 1,
+        minValue: 0,
         maxValue: 1000000000,
         initialIntegerValue: _count,
         title: new Text("Enter the number of $_name"),
       ),
     ).then((value) {
       if (value != null) {
-        setState(() => _count = value);
+        setState(() {
+          _count = value;
+          _updateTotal();
+        });
       }
     });
   }
@@ -144,11 +183,11 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
   _showValuePicker(BuildContext context) {
     showDialog(
       context: context,
-      child: new NumberPickerDialog.decimal(
+      child: new NumberPickerDialog.integer(
         minValue: 1,
         maxValue: 1000000000,
-        initialDoubleValue: _value,
-        title: new Text("Enter the value of $_name"),
+        initialIntegerValue: _value,
+        title: new Text("Enter the number of cents of $_name"),
       ),
     ).then((value) {
       if (value != null) {
@@ -165,7 +204,7 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
   }
 }
 
-String getNumberFormat(int count, double value) {
+String getNumberFormat(int count, int value) {
   var format = new NumberFormat("#,##0.00", "en_US");
 
   return '\$ ' + format.format((count * value) / 100);
