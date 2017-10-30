@@ -147,39 +147,7 @@ class _DenominationListState extends State<DenominationList> {
 
 
 
-  _editEntry(Denomination denominationEdit) {
-
-    Navigator
-
-        .of(context)
-
-        .push(
-
-      new MaterialPageRoute<Denomination>(
-
-        builder: (BuildContext context) {
-
-          return new DenominationEntryDialog.edit(denominationEdit);
-
-        },
-
-        fullscreenDialog: false,
-
-      ),
-
-    )
-
-        .then((newSave) {
-
-      if (newSave != null) {
-
-        setState(() => widget.denominations[widget.denominations.indexOf(denominationEdit)] = newSave);
-
-      }
-
-    });
-
-  }
+  
 
 
 

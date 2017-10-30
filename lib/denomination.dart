@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:bankwitt/denominationEntryDialog.dart';
+
 
 class Denomination {
   int id;
@@ -61,7 +63,10 @@ class _DenominationTileState extends State<DenominationListItem> {
               'images/' + widget.denomination.name + '.png',
               fit: BoxFit.cover,
             )
-        )
+        ),
+      onTap: (){
+        _editEntry(widget.denomination);
+      }
     );
 
     return new GridTile(
@@ -112,6 +117,40 @@ class _DenominationTileState extends State<DenominationListItem> {
       ),
       child: image,
     );
+  }
+
+  _editEntry(Denomination denominationEdit) {
+
+    Navigator
+
+        .of(context)
+
+        .push(
+
+      new MaterialPageRoute<Denomination>(
+
+        builder: (BuildContext context) {
+
+          return new DenominationEntryDialog.edit(denominationEdit);
+
+        },
+
+        fullscreenDialog: false,
+
+      ),
+
+    )
+
+        .then((newSave) {
+
+      if (newSave != null) {
+
+        setState(() => widget.denomination = newSave);
+
+      }
+
+    });
+
   }
 
   String updateTotal() {
