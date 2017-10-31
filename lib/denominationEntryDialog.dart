@@ -12,6 +12,7 @@ import 'package:bankwitt/denomination.dart';
 
 DateTime _dateEdited = new DateTime.now();
 DateFormat _dateFormat = new DateFormat("EEE dd/MM/yyyy");
+NumberFormat _moneyFormat = new NumberFormat("\$ #,##0.00", "en_US");
 
 class DenominationEntryDialog extends StatefulWidget {
   final Denomination denominationToEdit;
@@ -39,6 +40,14 @@ class DenominationEntryDialog extends StatefulWidget {
   }
 }
 
+class DenominationOption {
+  int value;
+  String name;
+  String prettyName;
+
+  DenominationOption(this.value, this.name, this.prettyName);
+}
+
 class DenominationEntryDialogState extends State<DenominationEntryDialog> {
   int _id;
   int _count;
@@ -49,20 +58,20 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
   String _total;
   String _name;
 
-  var _possibleNames = <String>[
-    'penny',
-    'nickel',
-    'dime',
-    'quarter',
-    'half_dollar',
-    'dollar_coin',
-    'dollar',
-    'two_dollar',
-    'five_dollar',
-    'ten_dollar',
-    'twenty_dollar',
-    'fifty_dollar',
-    'hundred_dollar'
+  List<DenominationOption> _possibleNames = <DenominationOption>[
+    new DenominationOption(1, 'penny', 'Penny'),
+    new DenominationOption(5, 'nickel', 'Nickel'),
+    new DenominationOption(10, 'dime', 'Dime'),
+    new DenominationOption(25, 'quarter', 'Quarter'),
+    new DenominationOption(50, 'half_dollar', 'Half Dollar'),
+    new DenominationOption(100, 'dollar_coin', 'Dollar Coin'),
+    new DenominationOption(100, 'dollar', 'Dollar Bill'),
+    new DenominationOption(200, 'two_dollar', 'Two Dollar Bill'),
+    new DenominationOption(500, 'five_dollar', 'Five Dollar Bill'),
+    new DenominationOption(1000, 'ten_dollar', 'Ten Dollar Bill'),
+    new DenominationOption(2000, 'twenty_dollar', 'Twenty Dollar Bill'),
+    new DenominationOption(5000, 'fifty_dollar', 'Fifty Dollar Bill'),
+    new DenominationOption(10000, 'hundred_dollar', 'Hundred Dollar Bill'),
   ];
 
   DenominationEntryDialogState(this._id, this._count, this._value, this._userId,
@@ -120,9 +129,8 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
           ),
           new ListTile(
             title: new Text(
-              "Value: \$ $_value",
+              "Value: " + _moneyFormat.format(_value / 100),
             ),
-            onTap: () => _showValuePicker(context),
           ),
           new ListTile(
             title: const Text('Name:'),
@@ -131,12 +139,13 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
               onChanged: (String newValue) {
                 setState(() {
                   _name = newValue;
+                  _value = _possibleNames.firstWhere((indName) => indName.name == _name).value;
                 });
               },
-              items: _possibleNames.map((String value) {
+              items: _possibleNames.map((DenominationOption value) {
                 return new DropdownMenuItem<String>(
-                  value: value,
-                  child: new Text(value),
+                  value: value.name,
+                  child: new Text(value.prettyName),
                 );
               }).toList(),
             ),
@@ -180,34 +189,13 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
     });
   }
 
-  _showValuePicker(BuildContext context) {
-    showDialog(
-      context: context,
-      child: new NumberPickerDialog.integer(
-        minValue: 1,
-        maxValue: 1000000000,
-        initialIntegerValue: _value,
-        title: new Text("Enter the number of cents of $_name"),
-      ),
-    ).then((value) {
-      if (value != null) {
-        setState(() {
-          _value = value;
-          _updateTotal();
-        });
-      }
-    });
-  }
-
   void _updateTotal() {
     _total = getNumberFormat(_count, _value);
   }
 }
 
 String getNumberFormat(int count, int value) {
-  var format = new NumberFormat("#,##0.00", "en_US");
-
-  return '\$ ' + format.format((count * value) / 100);
+  return _moneyFormat.format((count * value) / 100);
 }
 
 class DateTimeItem extends StatelessWidget {
@@ -216,14 +204,9 @@ class DateTimeItem extends StatelessWidget {
         date = dateTime == null
             ? new DateTime.now()
             : new DateTime(dateTime.year, dateTime.month, dateTime.day),
-        time = dateTime == null
-            ? new DateTime.now()
-            : new TimeOfDay(hour: dateTime.hour, minute: dateTime.minute),
         super(key: key);
 
   final DateTime date;
-
-  final TimeOfDay time;
 
   final ValueChanged<DateTime> onChanged;
 
@@ -239,12 +222,6 @@ class DateTimeItem extends StatelessWidget {
                 child: new Text(new DateFormat('EEEE, MMMM d').format(date))),
           ),
         ),
-        new InkWell(
-          onTap: (() => _showTimePicker(context)),
-          child: new Padding(
-              padding: new EdgeInsets.symmetric(vertical: 8.0),
-              child: new Text('$time')),
-        ),
       ],
     );
   }
@@ -258,17 +235,7 @@ class DateTimeItem extends StatelessWidget {
 
     if (dateTimePicked != null) {
       onChanged(new DateTime(dateTimePicked.year, dateTimePicked.month,
-          dateTimePicked.day, time.hour, time.minute));
-    }
-  }
-
-  Future _showTimePicker(BuildContext context) async {
-    TimeOfDay timeOfDay =
-        await showTimePicker(context: context, initialTime: time);
-
-    if (timeOfDay != null) {
-      onChanged(new DateTime(
-          date.year, date.month, date.day, timeOfDay.hour, timeOfDay.minute));
+          dateTimePicked.day));
     }
   }
 }

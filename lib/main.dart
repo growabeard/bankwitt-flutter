@@ -36,7 +36,7 @@ class _DenominationListState extends State<DenominationList> {
   ScrollController _scrollController = new ScrollController();
   var url = new Uri.https(bankWittUrl, 'denominations', {'userId': '1'});
 
-  int userId = 0;
+  int userId = 1;
 
   initState() {
     super.initState();
