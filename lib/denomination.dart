@@ -12,10 +12,12 @@ class Denomination {
   String updated;
   String total;
   String name;
+  bool shouldDelete;
 
   Denomination(this.id, this.count, this.value, this.userId, this.label,
       this.updated, this.total, this.name){
     total = getNumberFormat(count, value);
+    shouldDelete = false;
   }
 
   Map toJson() {

@@ -32,10 +32,11 @@ class DenominationEntryDialog extends StatefulWidget {
           denominationToEdit.label,
           denominationToEdit.updated,
           denominationToEdit.total,
-          denominationToEdit.name);
+          denominationToEdit.name,
+          denominationToEdit.shouldDelete);
     } else {
       return new DenominationEntryDialogState(
-          0, 0, 0, 0, '', _dateFormat.format(_dateEdited), '', '');
+          0, 0, 0, 0, '', _dateFormat.format(_dateEdited), '', '', false);
     }
   }
 }
@@ -57,6 +58,7 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
   String _updated;
   String _total;
   String _name;
+  bool _shouldDelete;
 
   List<DenominationOption> _possibleNames = <DenominationOption>[
     new DenominationOption(1, 'penny', 'Penny'),
@@ -75,7 +77,7 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
   ];
 
   DenominationEntryDialogState(this._id, this._count, this._value, this._userId,
-      this._label, this._updated, this._total, this._name);
+      this._label, this._updated, this._total, this._name, this._shouldDelete);
 
   Widget _createAppBar(BuildContext context) {
     return new AppBar(
@@ -99,7 +101,7 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
           icon: new Icon(Icons.delete),
           tooltip: 'Delete denomination',
           onPressed: () {
-
+            this._shouldDelete = true;
           },
         )
       ],

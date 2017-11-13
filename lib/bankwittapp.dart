@@ -12,8 +12,9 @@ import 'package:bankwitt/denominationEntryDialog.dart';
 var httpClient = createHttpClient();
 var bankWittUrl = 'bankwitt.herokuapp.com';
 
-class DenominationList extends StatefulWidget {
-  DenominationList({Key key, this.denominations, this.users, this.currentUser}) : super(key: key);
+class BankWittApp extends StatefulWidget {
+  BankWittApp({Key key, this.denominations, this.users, this.currentUser})
+      : super(key: key);
 
   List<Denomination> denominations = new List<Denomination>();
 
@@ -27,16 +28,17 @@ class DenominationList extends StatefulWidget {
   // instead of creating a new State object.
 
   @override
-  _DenominationListState createState() => new _DenominationListState();
+  _BankWittAppState createState() => new _BankWittAppState();
 }
 
-class _DenominationListState extends State<DenominationList>  with TickerProviderStateMixin {
+class _BankWittAppState extends State<BankWittApp>
+    with TickerProviderStateMixin {
   static final GlobalKey<ScaffoldState> _scaffoldKey =
       new GlobalKey<ScaffoldState>();
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
       new GlobalKey<RefreshIndicatorState>();
   final GlobalKey<RefreshIndicatorState> _userRefreshIndicatorKey =
-  new GlobalKey<RefreshIndicatorState>();
+      new GlobalKey<RefreshIndicatorState>();
 
   AnimationController _controller;
 
@@ -51,48 +53,39 @@ class _DenominationListState extends State<DenominationList>  with TickerProvide
   initState() {
     super.initState();
 
-      _getUserList();
-      _controller = new AnimationController(
+    _getUserList();
+    _controller = new AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
 
-        vsync: this,
+    _drawerContentsOpacity = new CurvedAnimation(
+      parent: new ReverseAnimation(_controller),
+      curve: Curves.fastOutSlowIn,
+    );
 
-        duration: const Duration(milliseconds: 200),
+    _drawerDetailsPosition = new Tween<Offset>(
+      begin: const Offset(0.0, -1.0),
+      end: Offset.zero,
+    )
+        .animate(new CurvedAnimation(
+      parent: _controller,
+      curve: Curves.fastOutSlowIn,
+    ));
 
-      );
-
-      _drawerContentsOpacity = new CurvedAnimation(
-
-        parent: new ReverseAnimation(_controller),
-
-        curve: Curves.fastOutSlowIn,
-
-      );
-
-      _drawerDetailsPosition = new Tween<Offset>(
-
-        begin: const Offset(0.0, -1.0),
-
-        end: Offset.zero,
-
-      ).animate(new CurvedAnimation(
-
-        parent: _controller,
-
-        curve: Curves.fastOutSlowIn,
-
-      ));
   }
 
   Future _getDenominationList() async {
     _refreshIndicatorKey.currentState?.show();
     print('Getting denomination list');
-    var url = new Uri.https(bankWittUrl, 'denominations', {'userId': widget.currentUser.id.toString()});
+    var url = new Uri.https(bankWittUrl, 'denominations',
+        {'userId': widget.currentUser.id.toString()});
     var response = await httpClient.get(url);
     print('Got denomination list');
     Map denomInner = JSON.decode(response.body);
     print(denomInner['denominations'].toString());
     List<Denomination> mappedList =
-        _createDenominations(denomInner['denominations']);
+        _createDenominationsFromJSON(denomInner['denominations']);
     setState(() {
       print('setting state..');
       widget.denominations = mappedList;
@@ -107,8 +100,7 @@ class _DenominationListState extends State<DenominationList>  with TickerProvide
     print('Got user list');
     List userInner = JSON.decode(response.body);
     print(userInner.toString());
-    List<User> mappedList =
-    _createUsers(userInner);
+    List<User> mappedList = _createUsersFromJSON(userInner);
     setState(() {
       print('setting state..');
       widget.users = mappedList;
@@ -196,76 +188,73 @@ class _DenominationListState extends State<DenominationList>  with TickerProvide
             )),
           ])),
       drawer: new Drawer(
-          child: new RefreshIndicator(
-    key: _refreshIndicatorKey,
-    onRefresh: _getUserList,
-        child: new ListView(
-          children: <Widget>[
-            new UserAccountsDrawerHeader(
-              accountName: new Text(widget.currentUser.getFullName()),
-              accountEmail: new Text('User email..'),
-              currentAccountPicture: new CircleAvatar(child: new Text('JM')
+        child: new RefreshIndicator(
+          key: _refreshIndicatorKey,
+          onRefresh: _getUserList,
+          child: new ListView(
+            children: <Widget>[
+              new UserAccountsDrawerHeader(
+                accountName: widget.currentUser == null
+                    ? new Text('Choose User')
+                    : new Text(widget.currentUser.getFullName()),
+                accountEmail: new Text('User email..'),
+                currentAccountPicture: new CircleAvatar(child: new Text('JM')),
               ),
-            ),
-            new ClipRect(
-              child: new Stack(
-                children: <Widget>[
-                  // The initial contents of the drawer.
+              new ClipRect(
+                child: new Stack(
+                  children: <Widget>[
+                    // The initial contents of the drawer.
 
-                  new FadeTransition(
-                    opacity: _drawerContentsOpacity,
-                    child: new Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: widget.users.map((User user) {
-                        return new ListTile(
-                          leading: new CircleAvatar(child: new Text(user.getInitials())),
-                          title: new Text(user.getFullName()),
-                          onTap: _changeUser(user, context),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-
-                  // The drawer's "details" view.
-
-                  new SlideTransition(
-                    position: _drawerDetailsPosition,
-                    child: new FadeTransition(
-                      opacity: new ReverseAnimation(_drawerContentsOpacity),
+                    new FadeTransition(
+                      opacity: _drawerContentsOpacity,
                       child: new Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: <Widget>[
-                          new ListTile(
-                            leading: const Icon(Icons.settings),
-                            title: const Text('Manage accounts'),
-                            onTap: _showNotImplementedMessage,
-                          ),
-                        ],
+                        children: widget.users.map((User user) {
+                          return new ListTile(
+                            leading: new CircleAvatar(
+                                child: new Text(user.getInitials())),
+                            title: new Text(user.getFullName()),
+                            onTap: _changeUser(user, context),
+                          );
+                        }).toList(),
                       ),
                     ),
-                  ),
-                ],
+
+                    // The drawer's "details" view.
+
+                    new SlideTransition(
+                      position: _drawerDetailsPosition,
+                      child: new FadeTransition(
+                        opacity: new ReverseAnimation(_drawerContentsOpacity),
+                        child: new Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: <Widget>[
+                            new ListTile(
+                              leading: const Icon(Icons.settings),
+                              title: const Text('Manage accounts'),
+                              onTap: _showNotImplementedMessage,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
           ),
+        ),
       ),
     );
   }
 
   void _showNotImplementedMessage() {
-
     Navigator.of(context).pop(); // Dismiss the drawer.
 
     _scaffoldKey.currentState.showSnackBar(const SnackBar(
-
-        content: const Text("The drawer's items don't do anything")
-
-    ));
-
+        content: const Text("The drawer's items don't do anything")));
   }
 
   _changeUser(User userToChangeTo, BuildContext context) {
@@ -278,7 +267,7 @@ class _DenominationListState extends State<DenominationList>  with TickerProvide
     _getDenominationList();
   }
 
-  List<Denomination> _createDenominations(List denomInner) {
+  List<Denomination> _createDenominationsFromJSON(List denomInner) {
     List<Denomination> denoms = new List<Denomination>();
 
     for (var denom in denomInner) {
@@ -340,7 +329,7 @@ class _DenominationListState extends State<DenominationList>  with TickerProvide
     }
   }
 
-  List<User> _createUsers(List userList) {
+  List<User> _createUsersFromJSON(List userList) {
     List<User> users = new List<User>();
 
     for (var user in userList) {
