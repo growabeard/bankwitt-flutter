@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:bankwitt/denominationEntryDialog.dart';
+import 'package:intl/intl.dart';
 
 
 class Denomination {
@@ -20,6 +20,9 @@ class Denomination {
     shouldDelete = false;
   }
 
+  static get dateFormat => new DateFormat("EEE dd/MM/yyyy");
+  static get moneyFormat => new NumberFormat("\$ #,##0.00", "en_US");
+
   Map toJson() {
     Map map = new Map();
     map['id'] = this.id;
@@ -33,13 +36,12 @@ class Denomination {
     return map;
   }
 
+  static String getNumberFormat(int count, int value) {
+    return moneyFormat.format((count * value) / 100);
+  }
+
 }
 
-String getNumberFormat(int count, int value) {
-  var format = new NumberFormat("#,##0.00", "en_US");
-
-  return '\$ ' + format.format((count * value) / 100);
-}
 
 class DenominationListItem extends StatefulWidget {
   DenominationListItem({Denomination denomination})
@@ -156,7 +158,7 @@ class _DenominationTileState extends State<DenominationListItem> {
   }
 
   String updateTotal() {
-    return widget.denomination.total = getNumberFormat(widget.denomination.count, widget.denomination.value);
+    return widget.denomination.total = Denomination.getNumberFormat(widget.denomination.count, widget.denomination.value);
   }
 
   void onBannerTap(photo) {}

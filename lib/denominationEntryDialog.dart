@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'package:intl/intl.dart';
-
 import 'package:meta/meta.dart';
 
 import 'package:numberpicker/numberpicker.dart';
@@ -11,8 +9,6 @@ import 'package:numberpicker/numberpicker.dart';
 import 'package:bankwitt/denomination.dart';
 
 DateTime _dateEdited = new DateTime.now();
-DateFormat _dateFormat = new DateFormat("EEE dd/MM/yyyy");
-NumberFormat _moneyFormat = new NumberFormat("\$ #,##0.00", "en_US");
 
 class DenominationEntryDialog extends StatefulWidget {
   final Denomination denominationToEdit;
@@ -36,7 +32,7 @@ class DenominationEntryDialog extends StatefulWidget {
           denominationToEdit.shouldDelete);
     } else {
       return new DenominationEntryDialogState(
-          0, 0, 0, 0, '', _dateFormat.format(_dateEdited), '', '', false);
+          0, 0, 0, 0, '', Denomination.dateFormat.format(_dateEdited), '', '', false);
     }
   }
 }
@@ -117,9 +113,9 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
           new ListTile(
             leading: new Icon(Icons.today, color: Colors.grey[500]),
             title: new DateTimeItem(
-              dateTime: _dateFormat.parse(_updated),
+              dateTime: Denomination.dateFormat.parse(_updated),
               onChanged: (dateTime) => setState(() {
-                    _updated = _dateFormat.format(dateTime);
+                    _updated = Denomination.dateFormat.format(dateTime);
                   }),
             ),
           ),
@@ -131,7 +127,7 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
           ),
           new ListTile(
             title: new Text(
-              "Value: " + _moneyFormat.format(_value / 100),
+              "Value: " + Denomination.moneyFormat.format(_value / 100),
             ),
           ),
           new ListTile(
@@ -192,13 +188,11 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
   }
 
   void _updateTotal() {
-    _total = getNumberFormat(_count, _value);
+    _total = Denomination.getNumberFormat(_count, _value);
   }
 }
 
-String getNumberFormat(int count, int value) {
-  return _moneyFormat.format((count * value) / 100);
-}
+
 
 class DateTimeItem extends StatelessWidget {
   DateTimeItem({Key key, DateTime dateTime, @required this.onChanged})
@@ -221,7 +215,7 @@ class DateTimeItem extends StatelessWidget {
             onTap: (() => _showDatePicker(context)),
             child: new Padding(
                 padding: new EdgeInsets.symmetric(vertical: 8.0),
-                child: new Text(new DateFormat('EEEE, MMMM d').format(date))),
+                child: new Text(Denomination.dateFormat.format(date))),
           ),
         ),
       ],

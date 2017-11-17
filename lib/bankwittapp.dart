@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
 
 import 'package:bankwitt/denomination.dart';
 import 'package:bankwitt/user.dart';
@@ -20,7 +19,7 @@ class BankWittApp extends StatefulWidget {
 
   List<User> users = new List<User>();
 
-  User currentUser = new User(0, 'Pick', 'Me');
+  User currentUser = new User(-1, 'Pick', 'Me');
 
   // The framework calls createState the first time a widget appears at a given
   // location in the tree. If the parent rebuilds and uses the same type of
@@ -47,6 +46,7 @@ class _BankWittAppState extends State<BankWittApp>
   Animation<Offset> _drawerDetailsPosition;
 
   ScrollController _scrollController = new ScrollController();
+  ScrollController _drawerScrollController = new ScrollController();
 
   int userId = 1;
 
@@ -72,7 +72,6 @@ class _BankWittAppState extends State<BankWittApp>
       parent: _controller,
       curve: Curves.fastOutSlowIn,
     ));
-
   }
 
   Future _getDenominationList() async {
@@ -105,6 +104,7 @@ class _BankWittAppState extends State<BankWittApp>
       print('setting state..');
       widget.users = mappedList;
     });
+    _scaffoldKey.currentState.openDrawer();
   }
 
   Future<int> _saveDenominationList() async {
@@ -188,65 +188,74 @@ class _BankWittAppState extends State<BankWittApp>
             )),
           ])),
       drawer: new Drawer(
-        child: new RefreshIndicator(
-          key: _refreshIndicatorKey,
-          onRefresh: _getUserList,
-          child: new ListView(
-            children: <Widget>[
-              new UserAccountsDrawerHeader(
-                accountName: widget.currentUser == null
-                    ? new Text('Choose User')
-                    : new Text(widget.currentUser.getFullName()),
-                accountEmail: new Text('User email..'),
-                currentAccountPicture: new CircleAvatar(child: new Text('JM')),
-              ),
-              new ClipRect(
-                child: new Stack(
-                  children: <Widget>[
-                    // The initial contents of the drawer.
-
-                    new FadeTransition(
-                      opacity: _drawerContentsOpacity,
-                      child: new Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: widget.users.map((User user) {
-                          return new ListTile(
-                            leading: new CircleAvatar(
-                                child: new Text(user.getInitials())),
-                            title: new Text(user.getFullName()),
-                            onTap: _changeUser(user, context),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-
-                    // The drawer's "details" view.
-
-                    new SlideTransition(
-                      position: _drawerDetailsPosition,
-                      child: new FadeTransition(
-                        opacity: new ReverseAnimation(_drawerContentsOpacity),
-                        child: new Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: <Widget>[
-                            new ListTile(
-                              leading: const Icon(Icons.settings),
-                              title: const Text('Manage accounts'),
-                              onTap: _showNotImplementedMessage,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+          child: new ListView(children: <Widget>[
+        new UserAccountsDrawerHeader(
+          accountName: widget.currentUser == null
+              ? new Text('Choose User')
+              : new Text(widget.currentUser.getFullName()),
+          accountEmail: new Text('User email..'),
+          currentAccountPicture: new CircleAvatar(
+              child: widget.currentUser == null
+                  ? new Text('Choose User')
+                  : new Text(widget.currentUser.getInitials())),
         ),
-      ),
+        new ClipRect(
+
+            child: new Stack(
+              children: <Widget>[
+                // The initial contents of the drawer.
+
+                new FadeTransition(
+                  opacity: _drawerContentsOpacity,
+                  child: new RefreshIndicator(
+    key: _userRefreshIndicatorKey,
+    onRefresh: _getUserList,
+    child: new Column(children: <Widget>[
+    new Expanded(child: new ListView.builder(
+                    controller: _drawerScrollController,
+                    itemBuilder: (BuildContext context, int index) {
+                      User insideUser = widget.users.elementAt(index);
+                      if (widget.currentUser != null &&
+                          widget.currentUser.id != insideUser.id) {
+                        return new ListTile(
+                          leading: new CircleAvatar(
+                              child: new Text(insideUser.getInitials())),
+                          title: new Text(insideUser.getFullName()),
+                          onTap: _changeUser(insideUser, context),
+                        );
+                      }
+                    },
+                    itemCount: widget.users == null ? 0 : widget.users.length,
+                  ),
+                  ), ],
+                ),
+            ),
+            ),
+
+                // The drawer's "details" view.
+
+                new SlideTransition(
+                  position: _drawerDetailsPosition,
+                  child: new FadeTransition(
+                    opacity: new ReverseAnimation(_drawerContentsOpacity),
+                    child: new Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: <Widget>[
+                        new ListTile(
+                          leading: const Icon(Icons.settings),
+                          title: const Text('Manage accounts'),
+                          onTap: _showNotImplementedMessage,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+      ])),
     );
   }
 
@@ -307,7 +316,7 @@ class _BankWittAppState extends State<BankWittApp>
                   1,
                   userId,
                   '\$ 0.01',
-                  new DateFormat("EEE dd/MM/yyyy").format(new DateTime.now()),
+                  Denomination.dateFormat.format(new DateTime.now()),
                   '\$ 0.00',
                   'penny'));
             },
