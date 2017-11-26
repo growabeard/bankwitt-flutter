@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:android_intent/android_intent.dart';
+
 
 import 'package:bankwitt/denomination.dart';
 import 'package:bankwitt/user.dart';
@@ -20,6 +22,8 @@ class BankWittApp extends StatefulWidget {
   List<User> users = new List<User>();
 
   User currentUser = new User(-1, 'Pick', 'Me');
+
+  String currentUserTotal = '';
 
   // The framework calls createState the first time a widget appears at a given
   // location in the tree. If the parent rebuilds and uses the same type of
@@ -39,6 +43,9 @@ class _BankWittAppState extends State<BankWittApp>
   final GlobalKey<RefreshIndicatorState> _userRefreshIndicatorKey =
       new GlobalKey<RefreshIndicatorState>();
 
+  static const platform = const MethodChannel('samples.flutter.io/battery');
+
+
   AnimationController _controller;
 
   Animation<double> _drawerContentsOpacity;
@@ -47,8 +54,6 @@ class _BankWittAppState extends State<BankWittApp>
 
   ScrollController _scrollController = new ScrollController();
   ScrollController _drawerScrollController = new ScrollController();
-
-  int userId = 1;
 
   initState() {
     super.initState();
@@ -85,6 +90,7 @@ class _BankWittAppState extends State<BankWittApp>
     print(denomInner['denominations'].toString());
     List<Denomination> mappedList =
         _createDenominationsFromJSON(denomInner['denominations']);
+    widget.currentUserTotal = Denomination.getTotalFormat(denomInner['total']);
     setState(() {
       print('setting state..');
       widget.denominations = mappedList;
@@ -110,11 +116,7 @@ class _BankWittAppState extends State<BankWittApp>
   Future<int> _saveDenominationList() async {
     print('Saving denomination list');
     var url = new Uri.https(bankWittUrl, 'savedenominations');
-    var body = "{\"denominations\": " +
-        JSON.encode(widget.denominations) +
-        ", \"user\": " +
-        JSON.encode(User) +
-        "}";
+    var body = createJSONForSaving();
     print("BODY " + body);
     Map header = new Map();
     header['Content-Type'] = 'application/json';
@@ -123,13 +125,16 @@ class _BankWittAppState extends State<BankWittApp>
     return response.statusCode;
   }
 
+
   @override
   Widget build(BuildContext context) {
     final Orientation orientation = MediaQuery.of(context).orientation;
 
     return new Scaffold(
       key: _scaffoldKey,
-      appBar: new AppBar(title: new Text('Joseph Moody'), actions: <Widget>[
+      appBar: new AppBar(
+          title: widget.currentUser == null ? new Text('Choose User') : new Text(widget.currentUser.getFullName()),
+          actions: <Widget>[
         new IconButton(
           icon: new Icon(Icons.add),
           tooltip: 'Add new denomination',
@@ -154,7 +159,9 @@ class _BankWittAppState extends State<BankWittApp>
                 _scaffoldKey.currentState.showSnackBar(new SnackBar(
                     content: new Text('Save success'),
                     action:
-                        new SnackBarAction(label: 'SEND', onPressed: () {})));
+                        new SnackBarAction(label: 'SEND', onPressed: () {
+                          _sendBankWittStatement();
+                        })));
               } else {
                 _scaffoldKey.currentState.showSnackBar(new SnackBar(
                     content:
@@ -162,13 +169,21 @@ class _BankWittAppState extends State<BankWittApp>
               }
             });
           },
+        ),
+        new IconButton(
+          icon: new Icon(Icons.share),
+          tooltip: 'Share denominations for User',
+          onPressed: () {
+            _sendBankWittStatement();
+          },
         )
       ]),
       body: new RefreshIndicator(
           key: _refreshIndicatorKey,
           onRefresh: _getDenominationList,
           child: new Column(children: <Widget>[
-            new Expanded(
+          new Text('TOTAL: ' + widget.currentUserTotal),
+          new Expanded(
                 child: new GridView.builder(
               controller: _scrollController,
               gridDelegate: new SliverGridDelegateWithFixedCrossAxisCount(
@@ -188,74 +203,37 @@ class _BankWittAppState extends State<BankWittApp>
             )),
           ])),
       drawer: new Drawer(
-          child: new ListView(children: <Widget>[
-        new UserAccountsDrawerHeader(
-          accountName: widget.currentUser == null
-              ? new Text('Choose User')
-              : new Text(widget.currentUser.getFullName()),
-          accountEmail: new Text('User email..'),
-          currentAccountPicture: new CircleAvatar(
-              child: widget.currentUser == null
-                  ? new Text('Choose User')
-                  : new Text(widget.currentUser.getInitials())),
-        ),
-        new ClipRect(
 
-            child: new Stack(
-              children: <Widget>[
-                // The initial contents of the drawer.
+                child: new Column(
+                    children: <Widget> [
 
-                new FadeTransition(
-                  opacity: _drawerContentsOpacity,
-                  child: new RefreshIndicator(
-    key: _userRefreshIndicatorKey,
-    onRefresh: _getUserList,
-    child: new Column(children: <Widget>[
-    new Expanded(child: new ListView.builder(
-                    controller: _drawerScrollController,
-                    itemBuilder: (BuildContext context, int index) {
-                      User insideUser = widget.users.elementAt(index);
-                      if (widget.currentUser != null &&
-                          widget.currentUser.id != insideUser.id) {
-                        return new ListTile(
-                          leading: new CircleAvatar(
-                              child: new Text(insideUser.getInitials())),
-                          title: new Text(insideUser.getFullName()),
-                          onTap: _changeUser(insideUser, context),
-                        );
-                      }
-                    },
-                    itemCount: widget.users == null ? 0 : widget.users.length,
-                  ),
-                  ), ],
-                ),
-            ),
-            ),
+                    new Expanded(
+                        child: new ListView.builder(
+                          controller: _drawerScrollController,
+                          itemBuilder: (BuildContext context, int index) {
+                            User insideUser = widget.users.elementAt(index);
+                              return new ListTile(
+                                leading: new CircleAvatar(
+                                    child: new Text(insideUser.getInitials())),
+                                title: new Text(insideUser.getFullName()),
+                                onTap: () {
+                                  _changeUser(insideUser, context);
 
-                // The drawer's "details" view.
+                                }
+                              );
 
-                new SlideTransition(
-                  position: _drawerDetailsPosition,
-                  child: new FadeTransition(
-                    opacity: new ReverseAnimation(_drawerContentsOpacity),
-                    child: new Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: <Widget>[
-                        new ListTile(
-                          leading: const Icon(Icons.settings),
-                          title: const Text('Manage accounts'),
-                          onTap: _showNotImplementedMessage,
+                          },
+                          itemCount:
+                              widget.users == null ? 0 : widget.users.length,
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+  ],
                 ),
-              ],
-            ),
-          ),
 
-      ])),
+              ),
+
+
+
     );
   }
 
@@ -270,9 +248,12 @@ class _BankWittAppState extends State<BankWittApp>
     Navigator.of(context).pop();
 
     setState(() {
-      widget.denominations.clear();
+      if (widget.denominations != null) {
+        widget.denominations.clear();
+      }
       widget.currentUser = userToChangeTo;
     });
+
     _getDenominationList();
   }
 
@@ -314,7 +295,7 @@ class _BankWittAppState extends State<BankWittApp>
                   null,
                   0,
                   1,
-                  userId,
+                  widget.currentUser.id,
                   '\$ 0.01',
                   Denomination.dateFormat.format(new DateTime.now()),
                   '\$ 0.00',
@@ -346,5 +327,41 @@ class _BankWittAppState extends State<BankWittApp>
     }
 
     return users;
+  }
+
+  String createJSONForSaving() {
+    return "{\"denominations\": " +
+        JSON.encode(widget.denominations) +
+        ", \"user\": " +
+        JSON.encode(widget.currentUser) +
+        ", \"total\": " + JSON.encode(widget.currentUserTotal) + "}";
+  }
+
+
+
+//  Future<Null> _sendBankWittStatement() async {
+//    String statement = createJSONForSaving();
+//
+//    final AndroidIntent intent = new AndroidIntent(
+//      action: 'android.intent.action.VIEW',
+//      data: statement.toString(),
+//    );
+//    intent.launch();
+//
+//    _scaffoldKey.currentState.showSnackBar(new SnackBar(content: new Text('SENT STATEMENT!')));
+//  }
+
+
+  Future<Null> _sendBankWittStatement() async {
+    String statement = createJSONForSaving();
+    final int result = await platform.invokeMethod('getBatteryLevel', statement);
+    String snackBarText = 'WHAT HAPPEN!? ' + result.toString();
+
+    if (result == -1) {
+      snackBarText = 'ERROR! TRY AGAIN.';
+    } else if (result == 1) {
+      snackBarText = 'SENT STATEMENT!';
+    }
+    _scaffoldKey.currentState.showSnackBar(new SnackBar(content: new Text(snackBarText)));
   }
 }

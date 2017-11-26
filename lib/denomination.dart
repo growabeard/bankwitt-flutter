@@ -40,6 +40,11 @@ class Denomination {
     return moneyFormat.format((count * value) / 100);
   }
 
+  static String getTotalFormat(String cents) {
+    int centsInt = int.parse(cents);
+    return moneyFormat.format(centsInt / 100);
+  }
+
 }
 
 
