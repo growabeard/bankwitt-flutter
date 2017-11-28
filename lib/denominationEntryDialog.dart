@@ -4,11 +4,18 @@ import 'package:flutter/material.dart';
 
 import 'package:meta/meta.dart';
 
+
 import 'package:numberpicker/numberpicker.dart';
 
 import 'package:bankwitt/denomination.dart';
+import 'package:flutter/services.dart';
+
 
 DateTime _dateEdited = new DateTime.now();
+
+
+var bankWittUrl = 'bankwitt.herokuapp.com';
+var httpClient = createHttpClient();
 
 class DenominationEntryDialog extends StatefulWidget {
   final Denomination denominationToEdit;
@@ -74,6 +81,8 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
 
   DenominationEntryDialogState(this._id, this._count, this._value, this._userId,
       this._label, this._updated, this._total, this._name, this._shouldDelete);
+  static final GlobalKey<ScaffoldState> _scaffoldKey =
+  new GlobalKey<ScaffoldState>();
 
   Widget _createAppBar(BuildContext context) {
     return new AppBar(
@@ -84,7 +93,7 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
         new FlatButton(
           onPressed: () {
             Navigator.of(context).pop(new Denomination(
-                _id, _count, _value, _userId, _label, _updated, _total, _name));
+                _id, _count, _value, _userId, Denomination.moneyFormat.format(_value / 100), _updated, _total, _name));
           },
           child: new Text('SAVE',
               style: Theme
@@ -97,7 +106,7 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
           icon: new Icon(Icons.delete),
           tooltip: 'Delete denomination',
           onPressed: () {
-            this._shouldDelete = true;
+            widget.denominationToEdit.shouldDelete = true;
           },
         )
       ],
@@ -107,6 +116,7 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
+      key: _scaffoldKey,
       appBar: _createAppBar(context),
       body: new Column(
         children: [
@@ -190,6 +200,7 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
   void _updateTotal() {
     _total = Denomination.getNumberFormat(_count, _value);
   }
+
 }
 
 

@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:android_intent/android_intent.dart';
-
 
 import 'package:bankwitt/denomination.dart';
 import 'package:bankwitt/user.dart';
@@ -318,6 +315,36 @@ class _BankWittAppState extends State<BankWittApp>
       }
     }
   }
+
+
+  void _maybeDelete() {
+    if (_id == null) {
+      Navigator.of(context).pop();
+    } else {
+      _deleteDenomination();
+      _scaffoldKey.currentState.showSnackBar(new SnackBar(
+          content: new Text('Deleted denomination.'),
+          duration: new Duration(seconds:10),
+          action:
+          new SnackBarAction(label: 'UNDO', onPressed: () {
+            Navigator.of(context).pop(new Denomination(
+                _id, _count, _value, _userId, Denomination.moneyFormat.format(_value / 100), _updated, _total, _name));
+          })));
+    }
+  }
+
+
+  Future<int> _deleteDenomination() async {
+    print('Deleting denomination ' + widget.denominationToEdit.toString());
+    var url = new Uri.https(bankWittUrl, 'denominations',
+        {'denominationId': widget.denominationToEdit.id.toString()});
+    Map header = new Map();
+    header['Content-Type'] = 'application/json';
+    var response = await httpClient.delete(url, headers: header);
+    print(response.statusCode);
+    return response.statusCode;
+  }
+
 
   List<User> _createUsersFromJSON(List userList) {
     List<User> users = new List<User>();
