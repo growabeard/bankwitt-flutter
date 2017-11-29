@@ -22,6 +22,8 @@ class BankWittApp extends StatefulWidget {
 
   String currentUserTotal = '';
 
+  bool usersLoaded;
+
   // The framework calls createState the first time a widget appears at a given
   // location in the tree. If the parent rebuilds and uses the same type of
   // widget (with the same key), the framework will re-use the State object
@@ -42,7 +44,6 @@ class _BankWittAppState extends State<BankWittApp>
 
   static const platform = const MethodChannel('samples.flutter.io/battery');
 
-
   AnimationController _controller;
 
   Animation<double> _drawerContentsOpacity;
@@ -54,6 +55,8 @@ class _BankWittAppState extends State<BankWittApp>
 
   initState() {
     super.initState();
+
+    widget.usersLoaded = false;
 
     _getUserList();
     _controller = new AnimationController(
@@ -106,6 +109,7 @@ class _BankWittAppState extends State<BankWittApp>
     setState(() {
       print('setting state..');
       widget.users = mappedList;
+      widget.usersLoaded = true;
     });
     _scaffoldKey.currentState.openDrawer();
   }
@@ -122,7 +126,6 @@ class _BankWittAppState extends State<BankWittApp>
     return response.statusCode;
   }
 
-
   @override
   Widget build(BuildContext context) {
     final Orientation orientation = MediaQuery.of(context).orientation;
@@ -130,57 +133,63 @@ class _BankWittAppState extends State<BankWittApp>
     return new Scaffold(
       key: _scaffoldKey,
       appBar: new AppBar(
-          title: widget.currentUser == null ? new Text('Choose User') : new Text(widget.currentUser.getFullName()),
+          title: widget.currentUser == null
+              ? new Text('Choose User')
+              : new Text(widget.currentUser.last),
           actions: <Widget>[
-        new IconButton(
-          icon: new Icon(Icons.add),
-          tooltip: 'Add new denomination',
-          onPressed: () {
-            _openAddEntryDialog();
-          },
-        ),
-        new IconButton(
-          icon: new Icon(Icons.refresh),
-          tooltip: 'Refresh denominations for User',
-          onPressed: () {
-            _getDenominationList();
-          },
-        ),
-        new IconButton(
-          icon: new Icon(Icons.save),
-          tooltip: 'Save denominations for User',
-          onPressed: () {
-            Future<int> response = _saveDenominationList();
-            response.then((responseCode) {
-              if (responseCode == 200) {
-                _scaffoldKey.currentState.showSnackBar(new SnackBar(
-                    content: new Text('Save success'),
-                    action:
-                        new SnackBarAction(label: 'SEND', onPressed: () {
-                          _sendBankWittStatement();
-                        })));
-              } else {
-                _scaffoldKey.currentState.showSnackBar(new SnackBar(
-                    content:
-                        new Text('Save error ' + responseCode.toString())));
-              }
-            });
-          },
-        ),
-        new IconButton(
-          icon: new Icon(Icons.share),
-          tooltip: 'Share denominations for User',
-          onPressed: () {
-            _sendBankWittStatement();
-          },
-        )
-      ]),
+            new IconButton(
+              icon: new Icon(Icons.add),
+              tooltip: 'Add new denomination',
+              onPressed: () {
+                _openAddEntryDialog();
+              },
+            ),
+            new IconButton(
+              icon: new Icon(Icons.refresh),
+              tooltip: 'Refresh denominations for User',
+              onPressed: () {
+                _getDenominationList();
+              },
+            ),
+            new IconButton(
+              icon: new Icon(Icons.save),
+              tooltip: 'Save denominations for User',
+              onPressed: () {
+                Future<int> response = _saveDenominationList();
+                response.then((responseCode) {
+                  if (responseCode == 200) {
+                    _scaffoldKey.currentState.showSnackBar(new SnackBar(
+                        content: new Text('Save success'),
+                        action: new SnackBarAction(
+                            label: 'SEND',
+                            onPressed: () {
+                              _sendBankWittStatement();
+                            })));
+                  } else {
+                    _scaffoldKey.currentState.showSnackBar(new SnackBar(
+                        content:
+                            new Text('Save error ' + responseCode.toString())));
+                  }
+                });
+              },
+            ),
+            new IconButton(
+              icon: new Icon(Icons.share),
+              tooltip: 'Share denominations for User',
+              onPressed: () {
+                _sendBankWittStatement();
+              },
+            )
+          ]),
       body: new RefreshIndicator(
           key: _refreshIndicatorKey,
           onRefresh: _getDenominationList,
           child: new Column(children: <Widget>[
-          new Text('TOTAL: ' + widget.currentUserTotal),
-          new Expanded(
+            new LinearProgressIndicator(
+              value: widget.usersLoaded ? 0.0 : null
+            ),
+            new Text('TOTAL: ' + widget.currentUserTotal),
+            new Expanded(
                 child: new GridView.builder(
               controller: _scrollController,
               gridDelegate: new SliverGridDelegateWithFixedCrossAxisCount(
@@ -192,6 +201,7 @@ class _BankWittAppState extends State<BankWittApp>
               ),
               itemBuilder: (BuildContext context, int index) {
                 return new DenominationListItem(
+                    update: _updateDenominations,
                     denomination: widget.denominations.elementAt(index));
               },
               itemCount: widget.denominations == null
@@ -200,37 +210,48 @@ class _BankWittAppState extends State<BankWittApp>
             )),
           ])),
       drawer: new Drawer(
-
-                child: new Column(
-                    children: <Widget> [
-
-                    new Expanded(
-                        child: new ListView.builder(
-                          controller: _drawerScrollController,
-                          itemBuilder: (BuildContext context, int index) {
-                            User insideUser = widget.users.elementAt(index);
-                              return new ListTile(
-                                leading: new CircleAvatar(
-                                    child: new Text(insideUser.getInitials())),
-                                title: new Text(insideUser.getFullName()),
-                                onTap: () {
-                                  _changeUser(insideUser, context);
-
-                                }
-                              );
-
-                          },
-                          itemCount:
-                              widget.users == null ? 0 : widget.users.length,
-                        ),
-                      ),
-  ],
-                ),
-
+        child: new Column(
+          children: <Widget>[
+            new UserAccountsDrawerHeader(
+              accountName: widget.currentUser == null
+                  ? new Text('Choose User')
+                  : new Text(widget.currentUser.getFullName()),
+              accountEmail: new Text(''),
+              currentAccountPicture: new CircleAvatar(
+                  child: widget.currentUser == null
+                      ? new Text('')
+                      : new Text(widget.currentUser.getInitials())),
+            ),
+            new Expanded(
+              child: new ListView.builder(
+                controller: _drawerScrollController,
+                itemBuilder: (BuildContext context, int index) {
+                  User insideUser = widget.users.elementAt(index);
+                  return new ListTile(
+                      leading: new CircleAvatar(
+                          child: new Text(insideUser.getInitials())),
+                      title: new Text(insideUser.getFullName()),
+                      onTap: () {
+                        _changeUser(insideUser, context);
+                      });
+                },
+                itemCount: widget.users == null ? 0 : widget.users.length,
               ),
-
-
-
+            ),
+            new ListTile(
+              leading: const Icon(Icons.add),
+              title: const Text('Add account'),
+              onTap: _showNotImplementedMessage,
+            ),
+            new ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Manage accounts'),
+              onTap: _showNotImplementedMessage,
+            ),
+            new AboutListTile()
+          ],
+        ),
+      ),
     );
   }
 
@@ -272,7 +293,7 @@ class _BankWittAppState extends State<BankWittApp>
     return denoms;
   }
 
-  void _addWeightSave(Denomination denominationToSave) {
+  void _addDenomination(Denomination denominationToSave) {
     setState(() {
       widget.denominations.add(denominationToSave);
 
@@ -307,44 +328,48 @@ class _BankWittAppState extends State<BankWittApp>
           contains = true;
         }
       });
-      if (!contains) {
-        _addWeightSave(save);
+      if (save.shouldDelete == true) {
+        _maybeDelete(save);
       } else {
-        _scaffoldKey.currentState.showSnackBar(
-            new SnackBar(content: new Text(save.name + ' is already here.')));
+        if (!contains) {
+          _addDenomination(save);
+        } else {
+          _scaffoldKey.currentState.showSnackBar(
+              new SnackBar(content: new Text(save.name + ' is already here.')));
+        }
       }
     }
   }
 
-
-  void _maybeDelete() {
-    if (_id == null) {
+  void _maybeDelete(Denomination toDelete) {
+    if (toDelete.id == null) {
       Navigator.of(context).pop();
     } else {
-      _deleteDenomination();
+      _deleteDenomination(toDelete);
+      setState(() {
+        widget.denominations.remove(toDelete);
+      });
       _scaffoldKey.currentState.showSnackBar(new SnackBar(
           content: new Text('Deleted denomination.'),
-          duration: new Duration(seconds:10),
-          action:
-          new SnackBarAction(label: 'UNDO', onPressed: () {
-            Navigator.of(context).pop(new Denomination(
-                _id, _count, _value, _userId, Denomination.moneyFormat.format(_value / 100), _updated, _total, _name));
-          })));
+          duration: new Duration(seconds: 10),
+          action: new SnackBarAction(
+              label: 'UNDO',
+              onPressed: () {
+                _addDenomination(toDelete);
+              })));
     }
   }
 
-
-  Future<int> _deleteDenomination() async {
-    print('Deleting denomination ' + widget.denominationToEdit.toString());
+  Future<int> _deleteDenomination(Denomination toDelete) async {
+    print('Deleting denomination ' + toDelete.toString());
     var url = new Uri.https(bankWittUrl, 'denominations',
-        {'denominationId': widget.denominationToEdit.id.toString()});
+        {'denominationId': toDelete.id.toString()});
     Map header = new Map();
     header['Content-Type'] = 'application/json';
     var response = await httpClient.delete(url, headers: header);
     print(response.statusCode);
     return response.statusCode;
   }
-
 
   List<User> _createUsersFromJSON(List userList) {
     List<User> users = new List<User>();
@@ -361,27 +386,15 @@ class _BankWittAppState extends State<BankWittApp>
         JSON.encode(widget.denominations) +
         ", \"user\": " +
         JSON.encode(widget.currentUser) +
-        ", \"total\": " + JSON.encode(widget.currentUserTotal) + "}";
+        ", \"total\": " +
+        JSON.encode(widget.currentUserTotal) +
+        "}";
   }
-
-
-
-//  Future<Null> _sendBankWittStatement() async {
-//    String statement = createJSONForSaving();
-//
-//    final AndroidIntent intent = new AndroidIntent(
-//      action: 'android.intent.action.VIEW',
-//      data: statement.toString(),
-//    );
-//    intent.launch();
-//
-//    _scaffoldKey.currentState.showSnackBar(new SnackBar(content: new Text('SENT STATEMENT!')));
-//  }
-
 
   Future<Null> _sendBankWittStatement() async {
     String statement = createJSONForSaving();
-    final int result = await platform.invokeMethod('getBatteryLevel', statement);
+    final int result =
+        await platform.invokeMethod('getBatteryLevel', statement);
     String snackBarText = 'WHAT HAPPEN!? ' + result.toString();
 
     if (result == -1) {
@@ -389,6 +402,22 @@ class _BankWittAppState extends State<BankWittApp>
     } else if (result == 1) {
       snackBarText = 'SENT STATEMENT!';
     }
-    _scaffoldKey.currentState.showSnackBar(new SnackBar(content: new Text(snackBarText)));
+    _scaffoldKey.currentState
+        .showSnackBar(new SnackBar(content: new Text(snackBarText)));
+  }
+
+  _updateDenominations() {
+    int centsTotal = 0;
+    for (var denom in widget.denominations) {
+      if (denom.shouldDelete) {
+        _maybeDelete(denom);
+      } else {
+        centsTotal += denom.count * denom.value;
+      }
+    }
+    setState(() {
+      widget.currentUserTotal =
+          Denomination.getTotalFormat(centsTotal.toString());
+    });
   }
 }

@@ -20,7 +20,7 @@ class Denomination {
     shouldDelete = false;
   }
 
-  static get dateFormat => new DateFormat("EEE dd/MM/yyyy");
+  static get dateFormat => new DateFormat("EEE MM/dd/yyyy");
   static get moneyFormat => new NumberFormat("\$ #,##0.00", "en_US");
 
   Map toJson() {
@@ -49,11 +49,14 @@ class Denomination {
 
 
 class DenominationListItem extends StatefulWidget {
-  DenominationListItem({Denomination denomination})
+  DenominationListItem({Denomination denomination, VoidCallback update})
       : denomination = denomination,
+  update = update,
         super(key: new ObjectKey(denomination));
 
   Denomination denomination;
+
+  final VoidCallback update;
 
   @override
   State<StatefulWidget> createState() => new _DenominationTileState();
@@ -154,7 +157,10 @@ class _DenominationTileState extends State<DenominationListItem> {
 
       if (newSave != null) {
 
-        setState(() => widget.denomination = newSave);
+        setState((){
+          widget.denomination = newSave;
+          widget.update();
+        });
 
       }
 
@@ -162,8 +168,9 @@ class _DenominationTileState extends State<DenominationListItem> {
 
   }
 
-  String updateTotal() {
-    return widget.denomination.total = Denomination.getNumberFormat(widget.denomination.count, widget.denomination.value);
+  void updateTotal() {
+    widget.denomination.total = Denomination.getNumberFormat(widget.denomination.count, widget.denomination.value);
+    widget.update();
   }
 
   void onBannerTap(photo) {}

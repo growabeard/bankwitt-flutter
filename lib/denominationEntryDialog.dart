@@ -107,6 +107,7 @@ class DenominationEntryDialogState extends State<DenominationEntryDialog> {
           tooltip: 'Delete denomination',
           onPressed: () {
             widget.denominationToEdit.shouldDelete = true;
+            Navigator.of(context).pop(widget.denominationToEdit);
           },
         )
       ],
