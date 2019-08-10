@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 
@@ -15,7 +16,7 @@ DateTime _dateEdited = new DateTime.now();
 
 
 var bankWittUrl = 'bankwitt.herokuapp.com';
-var httpClient = createHttpClient();
+var httpClient = new HttpClient();
 
 class DenominationEntryDialog extends StatefulWidget {
   final Denomination denominationToEdit;

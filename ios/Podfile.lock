@@ -1,3 +1,22 @@
-PODFILE CHECKSUM: fe68fbd35e5bc75c5acdec41319edc0cdaebd038
+PODS:
+  - android_intent (0.0.1):
+    - Flutter
+  - Flutter (1.0.0)
 
-COCOAPODS: 1.0.1
+DEPENDENCIES:
+  - android_intent (from `.symlinks/plugins/android_intent/ios`)
+  - Flutter (from `.symlinks/flutter/ios`)
+
+EXTERNAL SOURCES:
+  android_intent:
+    :path: ".symlinks/plugins/android_intent/ios"
+  Flutter:
+    :path: ".symlinks/flutter/ios"
+
+SPEC CHECKSUMS:
+  android_intent: 73316069cd1f6aac919df1c6e640cad190fd5e8b
+  Flutter: 58dd7d1b27887414a370fcccb9e645c08ffd7a6a
+
+PODFILE CHECKSUM: aff02bfeed411c636180d6812254b2daeea14d09
+
+COCOAPODS: 1.6.1

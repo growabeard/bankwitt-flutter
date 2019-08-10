@@ -1,14 +1,19 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:bankwitt/denomination.dart';
 import 'package:bankwitt/user.dart';
 import 'package:bankwitt/denominationEntryDialog.dart';
+import 'package:http_auth/http_auth.dart';
 
-var httpClient = createHttpClient();
+
+var httpClient = new HttpClient();
 var bankWittUrl = 'bankwitt.herokuapp.com';
+var authHeader = 'Basic YnV0dHM6YnV0dHM=';
 
 class BankWittApp extends StatefulWidget {
   BankWittApp({Key key, this.denominations, this.users, this.currentUser})
@@ -79,18 +84,32 @@ class _BankWittAppState extends State<BankWittApp>
     ));
   }
 
+  Future<String> readResponse(HttpClientResponse response) {
+    var completer = new Completer();
+    var contents = new StringBuffer();
+    response.transform(Utf8Decoder()).listen((String data) {
+      contents.write(data);
+    }, onDone: () => completer.complete(contents.toString()));
+    return completer.future;
+  }
+
   Future _getDenominationList() async {
     _refreshIndicatorKey.currentState?.show();
     print('Getting denomination list');
     var url = new Uri.https(bankWittUrl, 'denominations',
         {'userId': widget.currentUser.id.toString()});
-    var response = await httpClient.get(url);
+    HttpClientResponse response = await httpClient.getUrl(url).then((HttpClientRequest request) {
+      request.headers.add('Content-Type', 'application/json');
+      request.headers.add('Authorization', authHeader);
+      return request.close();
+    });
     print('Got denomination list');
-    Map denomInner = JSON.decode(response.body);
-    print(denomInner['denominations'].toString());
+    String reply = await response.transform(utf8.decoder).join();
+    var decodedResponse = jsonDecode(reply);
+    print(decodedResponse['denominations'].toString());
     List<Denomination> mappedList =
-        _createDenominationsFromJSON(denomInner['denominations']);
-    widget.currentUserTotal = Denomination.getTotalFormat(denomInner['total']);
+        _createDenominationsFromJSON(decodedResponse['denominations']);
+    widget.currentUserTotal = Denomination.getTotalFormat(decodedResponse['total']);
     setState(() {
       print('setting state..');
       widget.denominations = mappedList;
@@ -101,9 +120,13 @@ class _BankWittAppState extends State<BankWittApp>
     _userRefreshIndicatorKey.currentState?.show();
     print('Getting user list');
     var url = new Uri.https(bankWittUrl, 'users');
-    var response = await httpClient.get(url);
+    var response = await httpClient.getUrl(url).then((HttpClientRequest request) {
+      request.headers.add('Content-Type', 'application/json');
+      request.headers.add('Authorization', authHeader);
+      return request.close();
+    });
     print('Got user list');
-    List userInner = JSON.decode(response.body);
+    List userInner = jsonDecode(await response.transform(utf8.decoder).join());
     print(userInner.toString());
     List<User> mappedList = _createUsersFromJSON(userInner);
     setState(() {
@@ -119,9 +142,12 @@ class _BankWittAppState extends State<BankWittApp>
     var url = new Uri.https(bankWittUrl, 'savedenominations');
     var body = createJSONForSaving();
     print("BODY " + body);
-    Map header = new Map();
-    header['Content-Type'] = 'application/json';
-    var response = await httpClient.post(url, body: body, headers: header);
+    var response = await httpClient.postUrl(url).then((HttpClientRequest request) {
+      request.headers.add('Content-Type', 'application/json');
+      request.headers.add('Authorization', authHeader);
+      request.write(body);
+      return request.close();
+    });
     print(response.statusCode);
     return response.statusCode;
   }
@@ -364,9 +390,11 @@ class _BankWittAppState extends State<BankWittApp>
     print('Deleting denomination ' + toDelete.toString());
     var url = new Uri.https(bankWittUrl, 'denominations',
         {'denominationId': toDelete.id.toString()});
-    Map header = new Map();
-    header['Content-Type'] = 'application/json';
-    var response = await httpClient.delete(url, headers: header);
+    var response = await httpClient.deleteUrl(url).then((HttpClientRequest request) {
+        request.headers.add('Content-Type', 'application/json');
+        request.headers.add('Authorization', authHeader);
+        return request.close();
+    });
     print(response.statusCode);
     return response.statusCode;
   }
@@ -383,11 +411,11 @@ class _BankWittAppState extends State<BankWittApp>
 
   String createJSONForSaving() {
     return "{\"denominations\": " +
-        JSON.encode(widget.denominations) +
+        jsonEncode(widget.denominations) +
         ", \"user\": " +
-        JSON.encode(widget.currentUser) +
+        jsonEncode(widget.currentUser) +
         ", \"total\": " +
-        JSON.encode(widget.currentUserTotal) +
+        jsonEncode(widget.currentUserTotal) +
         "}";
   }
 

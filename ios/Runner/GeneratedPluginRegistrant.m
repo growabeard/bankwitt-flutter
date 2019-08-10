@@ -8,7 +8,7 @@
 @implementation GeneratedPluginRegistrant
 
 + (void)registerWithRegistry:(NSObject<FlutterPluginRegistry>*)registry {
-  [AndroidIntentPlugin registerWithRegistrar:[registry registrarForPlugin:@"AndroidIntentPlugin"]];
+  [FLTAndroidIntentPlugin registerWithRegistrar:[registry registrarForPlugin:@"FLTAndroidIntentPlugin"]];
 }
 
 @end

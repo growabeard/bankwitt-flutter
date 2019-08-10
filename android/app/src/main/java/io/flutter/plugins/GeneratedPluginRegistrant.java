@@ -8,6 +8,18 @@ import io.flutter.plugins.androidintent.AndroidIntentPlugin;
  */
 public final class GeneratedPluginRegistrant {
   public static void registerWith(PluginRegistry registry) {
+    if (alreadyRegisteredWith(registry)) {
+      return;
+    }
     AndroidIntentPlugin.registerWith(registry.registrarFor("io.flutter.plugins.androidintent.AndroidIntentPlugin"));
+  }
+
+  private static boolean alreadyRegisteredWith(PluginRegistry registry) {
+    final String key = GeneratedPluginRegistrant.class.getCanonicalName();
+    if (registry.hasPlugin(key)) {
+      return true;
+    }
+    registry.registrarFor(key);
+    return false;
   }
 }
