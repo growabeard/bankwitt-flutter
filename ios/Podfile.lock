@@ -2,21 +2,28 @@ PODS:
   - android_intent (0.0.1):
     - Flutter
   - Flutter (1.0.0)
+  - MMSpreadsheetView (0.0.3)
 
 DEPENDENCIES:
   - android_intent (from `.symlinks/plugins/android_intent/ios`)
-  - Flutter (from `.symlinks/flutter/ios`)
+  - Flutter (from `.symlinks/flutter/ios-release`)
+  - MMSpreadsheetView (~> 0.0.3)
+
+SPEC REPOS:
+  https://github.com/cocoapods/specs.git:
+    - MMSpreadsheetView
 
 EXTERNAL SOURCES:
   android_intent:
     :path: ".symlinks/plugins/android_intent/ios"
   Flutter:
-    :path: ".symlinks/flutter/ios"
+    :path: ".symlinks/flutter/ios-release"
 
 SPEC CHECKSUMS:
   android_intent: 73316069cd1f6aac919df1c6e640cad190fd5e8b
   Flutter: 58dd7d1b27887414a370fcccb9e645c08ffd7a6a
+  MMSpreadsheetView: 93ba790e822cefc6126299d22319d5f1b44abd01
 
-PODFILE CHECKSUM: aff02bfeed411c636180d6812254b2daeea14d09
+PODFILE CHECKSUM: 88db83a84ec54ed202d936310f5b3108be0f6d3e
 
 COCOAPODS: 1.6.1
