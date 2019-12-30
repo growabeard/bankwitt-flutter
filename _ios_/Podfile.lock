@@ -1,0 +1,22 @@
+PODS:
+  - android_intent (0.0.1):
+    - Flutter
+  - Flutter (1.0.0)
+
+DEPENDENCIES:
+  - android_intent (from `/Users/lztd63/Documents/development/flutter/.pub-cache/hosted/pub.dartlang.org/android_intent-0.2.1/ios`)
+  - Flutter (from `/Users/lztd63/Documents/development/flutter/bin/cache/artifacts/engine/ios`)
+
+EXTERNAL SOURCES:
+  android_intent:
+    :path: "/Users/lztd63/Documents/development/flutter/.pub-cache/hosted/pub.dartlang.org/android_intent-0.2.1/ios"
+  Flutter:
+    :path: "/Users/lztd63/Documents/development/flutter/bin/cache/artifacts/engine/ios"
+
+SPEC CHECKSUMS:
+  android_intent: 73316069cd1f6aac919df1c6e640cad190fd5e8b
+  Flutter: 58dd7d1b27887414a370fcccb9e645c08ffd7a6a
+
+PODFILE CHECKSUM: cc70c01bca487bebd110b87397f017f3b76a89f1
+
+COCOAPODS: 1.6.1
